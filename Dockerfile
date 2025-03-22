@@ -1,7 +1,7 @@
 # Multi stage docker file for the Attendize application layer images
 
 # Base image with nginx, php-fpm and composer built on debian
-FROM wyveo/nginx-php-fpm:php74 as base
+FROM wyveo/nginx-php-fpm:php74 AS base
 RUN apt-get update && apt-get install -y wait-for-it libxrender1
 
 # Set up code
@@ -12,12 +12,12 @@ COPY . .
 RUN ./scripts/setup
 
 # The worker container runs the laravel queue in the background
-FROM base as worker
+FROM base AS worker
 
 CMD ["php", "artisan", "queue:work", "--daemon"]
 
 # The web container runs the HTTP server and connects to all other services in the application stack
-FROM base as web
+FROM base AS web
 
 # nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
