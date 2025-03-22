@@ -1,0 +1,37 @@
+name: Docker Images
+
+on:
+  release:
+    types: [published]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show versions
+        run: |
+          docker version
+          docker buildx version
+
+      - name: Log in to the registry
+        run: echo "${{ secrets.PUBLIC_DOCKER_REGISTRY_PASSWORD }}" | docker login --username "${{ vars.PUBLIC_DOCKER_REGISTRY_USERNAME }}" --password-stdin
+
+      - name: Set up builder
+        run: |
+          docker buildx create --name mybuilder
+          docker buildx use mybuilder
+
+      - name: Build and push the web image
+        run: |
+          NAME="${{ vars.PUBLIC_DOCKER_REGISTRY_ORG }}/attendize_web"
+          docker buildx build --platform linux/amd64 -t "$NAME:latest" -t "$NAME:${{ github.ref_name }}" --push --target web .
+
+      - name: Build and push the worker image
+        run: |
+          NAME="${{ vars.PUBLIC_DOCKER_REGISTRY_ORG }}/attendize_worker"
+          docker buildx build --platform linux/amd64 -t "$NAME:latest" -t "$NAME:${{ github.ref_name }}" --push --target worker .
